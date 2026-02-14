@@ -1,45 +1,37 @@
 const express = require('express');
 const multer = require('multer');
-const app = express();
+const fs = require('fs');
+const cookieParser = require('cookie-parser');
 
-// Upload dans le dossier "uploads/"
+const app = express();
+app.use(cookieParser());
+
 const upload = multer({ dest: 'uploads/' });
 
-// Route pour recevoir un fichier
 app.post('/upload', upload.single('file'), (req, res) => {
-  console.log('Fichier reçu :', req.file);
-  res.send('Upload OK');
-});
+  if (!req.file) return res.send('Aucun fichier reçu');
 
-// Route de test
-app.get('/', (req, res) => {
-  res.send('Server running');
+  console.log('Fichier reçu :', req.file.originalname);
+  console.log('Chemin temporaire sur serveur :', req.file.path);
+  console.log('Cookies :', req.cookies);
+
+  // Lire le contenu du fichier
+  try {
+    const content = fs.readFileSync(req.file.path, 'utf8');
+    console.log('Contenu du fichier :\n', content);
+
+    // Exemple d’exploitation : compter les lignes
+    const lineCount = content.split(/\r?\n/).length;
+    console.log('Nombre de lignes :', lineCount);
+
+    // Tu peux faire d’autres traitements ici
+    // Ex : recherche de patterns, exécution de fonctions, etc.
+  } catch (err) {
+    console.log('Erreur lecture fichier :', err.message);
+  }
+
+  res.send('Upload et lecture OK');
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
-const fs = require('fs');
-
-app.post('/upload', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    console.log('Aucun fichier reçu !');
-    return res.send('Aucun fichier');
-  }
-
-  console.log('Fichier reçu:', req.file.originalname);
-  console.log('Chemin temporaire sur serveur:', req.file.path);
-
-  // Lire un petit extrait du fichier (optionnel, juste pour test)
-  try {
-    const data = fs.readFileSync(req.file.path, 'utf8');
-    console.log('Contenu du fichier (50 premiers caractères) :', data.substring(0, 50));
-  } catch (err) {
-    console.log('Impossible de lire le fichier :', err.message);
-  }
-
-  res.send('Upload OK');
-});
-
-
+app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
